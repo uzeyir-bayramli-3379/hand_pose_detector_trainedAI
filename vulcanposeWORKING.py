@@ -1,56 +1,59 @@
 import cv2
 import mediapipe as mp
-cap=cv2.VideoCapture(0)
+import numpy as np 
+import csv
+
+cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 500)
-vulcan_img=cv2.imread("vulcan.png")
-mp_drawing=mp.solutions.drawing_utils
-mp_hands=mp.solutions.hands
-hands=mp_hands.Hands()
-while True:
-    success,frame=cap.read()
-    if success:
-        RGB_frame=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        result=hands.process(RGB_frame)
-        if result.multi_hand_landmarks:
-            for handLms in result.multi_hand_landmarks:
-                #print(handLms)
-                mp_drawing.draw_landmarks(frame,handLms,mp_hands.HAND_CONNECTIONS)
-                height, width, _ = RGB_frame.shape
-                # Draw line between index finger tip and thumb tip
-                #index_tip = handLms.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                #pt1 = (int(index_tip.x * width), int(index_tip.y * height))
-                #thumb_tip = handLms.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                #pt2 = (int(thumb_tip.x * width), int(thumb_tip.y * height))
-                #cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
 
-                index_tip = handLms.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                middle_tip = handLms.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-                ring_tip = handLms.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
-                pinky_tip = handLms.landmark[mp_hands.HandLandmark.PINKY_TIP]
+vulcan_img = cv2.imread("vulcan.png")
+filename="vulcan_gesture_data.csv"
+
+mp_drawing = mp.solutions.drawing_utils
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands()
+raw=[]
+np.savez('gestures.npz', features=[f'{axis}{i}' for i in range(1, 22) for axis in ('x', 'y', 'z')], labels=['label'])
+while True:
+    success, frame = cap.read()
+    if not success:
+        break
+
+    RGB_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = hands.process(RGB_frame)
+    
+    key = cv2.waitKey(1) & 0xFF
+
+    if result.multi_hand_landmarks:
+        for handLms in result.multi_hand_landmarks:
+            mp_drawing.draw_landmarks(frame, handLms, mp_hands.HAND_CONNECTIONS)
+            
+            if key == ord('a'):
                 wrist = handLms.landmark[mp_hands.HandLandmark.WRIST]
-                pt1 = [int(index_tip.x * width), int(index_tip.y * height)]
-                pt2 = [int(middle_tip.x * width), int(middle_tip.y * height)]
-                pt3 = [int(ring_tip.x * width), int(ring_tip.y * height)]
-                pt4 = [int(pinky_tip.x * width), int(pinky_tip.y * height)]
-                pt0=[int(wrist.x * width), int(wrist.y * height)]
-                cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
-                cv2.line(frame, pt3, pt4, (0, 255, 0), 2)
-                dist1=((index_tip.x-wrist.x)**2+(index_tip.y-wrist.y)**2)**0.5
-                dist2=((ring_tip.x-wrist.x)**2+(ring_tip.y-wrist.y)**2)**0.5
-                dim = ((index_tip.x - middle_tip.x) ** 2 + (index_tip.y - middle_tip.y) ** 2) ** 0.5
-                drp = ((ring_tip.x - pinky_tip.x) ** 2 + (ring_tip.y - pinky_tip.y) ** 2) ** 0.5
-                print(dist1, dist2, dim, drp)
-                if dim<0.075 and drp<0.13 and dist1>0.55 and dist2>0.56:
-                    cv2.imshow("vulcan", vulcan_img)
-                else:
-                    try:
-                        cv2.destroyWindow("vulcan")
-                    except:
-                        pass
-        cv2.imshow("Frame",frame)
-        if cv2.waitKey(1) & 0xFF==ord('q'):
-            break
+                index_mcp = handLms.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
+                
+                dist = np.linalg.norm(np.array([index_mcp.x, index_mcp.y]) - np.array([wrist.x, wrist.y]))
+                if dist == 0: 
+                    dist = 0.001
+
+                hand_features = []
+                for id, lm in enumerate(handLms.landmark):
+                    lm_x = float((lm.x - wrist.x) / dist)
+                    lm_y = float((lm.y - wrist.y) / dist)
+                    lm_z = float((lm.z - wrist.z) / dist)
+                    
+                    hand_features.append([lm_x, lm_y, lm_z])
+                hand_features_flat = [coord for point in hand_features for coord in point]
+                raw.append(hand_features_flat)
+
+    cv2.imshow("Frame", frame)
+    
+    if key == ord('q'):
+        break
 
 cv2.destroyAllWindows()
+cap.release()
 
+np.savez('gestures.npz', features=raw, labels=[i for i in range(0, len(raw))])
+#print(flat)
