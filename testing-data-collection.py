@@ -44,7 +44,7 @@ class TestModel(nn.Module):
 
         self.input_layer = nn.Linear(63,64)
         self.relu=nn.ReLU()
-        self.linear = nn.Linear(64, 2)
+        self.linear = nn.Linear(64, 3)
 
     def forward(self, x):
         x = self.input_layer(x)
@@ -75,3 +75,4 @@ with torch.no_grad():
         all_labels.extend(labels.cpu().numpy())
 accuracy = accuracy_score(all_labels, all_preds)
 print(f"Test Accuracy: {accuracy:.4f}")
+torch.save(model.state_dict(), 'vulcan_gesture_model.pth')
