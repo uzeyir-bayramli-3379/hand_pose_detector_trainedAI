@@ -14,6 +14,9 @@ mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
 raw=[]
+with open(filename, mode='w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow([f'{axis}{i}' for i in range(1, 22) for axis in ('x', 'y', 'z')] + ['label'])
 np.savez('gestures.npz', features=[f'{axis}{i}' for i in range(1, 22) for axis in ('x', 'y', 'z')], labels=['label'])
 while True:
     success, frame = cap.read()
@@ -46,6 +49,9 @@ while True:
                     hand_features.append([lm_x, lm_y, lm_z])
                 hand_features_flat = [coord for point in hand_features for coord in point]
                 raw.append(hand_features_flat)
+                with open('vulcan_gesture_data.csv', 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(hand_features_flat+[len(raw)-1])
 
     cv2.imshow("Frame", frame)
     
