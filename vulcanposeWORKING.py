@@ -8,7 +8,6 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 500)
 record=False
 class_label=0
-vulcan_img = cv2.imread("vulcan.png")
 filename="vulcan_gesture_data.csv"
 
 mp_drawing = mp.solutions.drawing_utils
@@ -63,9 +62,3 @@ while True:
 
 cv2.destroyAllWindows()
 cap.release()
-
-
-
-#np.savez('gestures.npz', features=[f'{axis}{i}' for i in range(1, 22) for axis in ('x', 'y', 'z')], labels=['label'])
-#np.savez('gestures.npz', features=raw, labels=[i for i in range(0, len(raw))])
-#print(flat)
