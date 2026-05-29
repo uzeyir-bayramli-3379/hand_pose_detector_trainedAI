@@ -13,6 +13,7 @@ The system runs end-to-end on a CPU at real-time framerates. It currently classi
 
 The "other" class is essential — it prevents the model from confidently misclassifying unrelated hand poses as one of the real gestures.
 
+(Might be different due to slight changes in the testing - feel free to record your own data , very simple process)
 ## How It Works
 
 The pipeline has four stages:
